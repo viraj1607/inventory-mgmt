@@ -10,9 +10,9 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("All");
 
-  useEffect(()=>{
-    getAllData()
-  },[])
+  useEffect(() => {
+    getAllData();
+  }, []);
 
   const handleProductNameChange = (e) => {
     setProductName(e.target.value);
@@ -61,12 +61,18 @@ export default function Home() {
   };
 
   const filteredInventory = inventory.filter((item) => {
-    if (searchBy === "All" || !searchTerm.trim()) {
-      return true;
+    if (searchBy === "All" || !searchTerm.trim() && item) {
+
+      // console.log(item)
+      return (
+        item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.quantity.toString().includes(searchTerm) ||
+        item.price.toString().includes(searchTerm)
+      );
     }
     switch (searchBy) {
       case "Name":
-        return item.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return item.productName.toLowerCase().includes(searchTerm.toLowerCase());
       case "Quantity":
         return item.quantity.toString().includes(searchTerm);
       case "Price":
@@ -75,6 +81,8 @@ export default function Home() {
         return true;
     }
   });
+
+  // console.log("filtered", filteredInventory);
 
   const getAllData = async () => {
     try {
@@ -105,13 +113,17 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ productName, quantity: parseInt(quantity), price: parseFloat(price) }),
+        body: JSON.stringify({
+          productName,
+          quantity: parseInt(quantity),
+          price: parseFloat(price),
+        }),
       });
 
       const data = await response.json();
       if (response.ok) {
         console.log(`Success: ${data.message}`);
-        getAllData()
+        getAllData();
       } else {
         console.log(`Error: ${data.message}`);
       }
@@ -124,7 +136,9 @@ export default function Home() {
     <>
       <Header />
       <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold text-center mb-6">Current Inventory</h1>
+        <h1 className="text-3xl font-bold text-center mb-6">
+          Current Inventory
+        </h1>
 
         {/* Form to Add Inventory */}
         <div className="flex flex-col sm:flex-row items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
