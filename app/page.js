@@ -9,6 +9,9 @@ export default function Home() {
   const [price, setPrice] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("All");
+  const [editingIndex, setEditingIndex] = useState(null); // State to track the index of the row being edited
+  const [editedQuantity, setEditedQuantity] = useState(""); // State to store edited quantity
+  const [editedPrice, setEditedPrice] = useState(""); // State to store edited price
 
   useEffect(() => {
     getAllData();
@@ -43,7 +46,11 @@ export default function Home() {
       const data = await response.json();
       if (response.ok) {
         console.log(`Success: ${data.message}`);
+        setProductName("")
+        setPrice("")
+        setQuantity("")
         getAllData();
+
       } else {
         console.log(`Error: ${data.message}`);
       }
@@ -52,24 +59,19 @@ export default function Home() {
     }
   };
 
-  // Frontend: Updated delete handler to call the DELETE API
   const handleDeleteClick = async (index, id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
 
     try {
-      // Send a DELETE request to the server with the product ID
       const response = await fetch(`/api/product?id=${id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        console.log("Product deleted successfully");
-        // Update the state by removing the deleted product
-        const updatedInventory = [...inventory];
-        updatedInventory.splice(index, 1);
-        setInventory(updatedInventory);
+        console.log("Product deleted successfully",await response.json());
+        getAllData()
       } else {
         const errorData = await response.json();
         console.error(`Error: ${errorData.message}`);
@@ -87,31 +89,6 @@ export default function Home() {
     setSearchBy(e.target.value);
   };
 
-  const filteredInventory = inventory.filter((item) => {
-    if (searchBy === "All" || (!searchTerm.trim() && item)) {
-      // console.log(item)
-      return (
-        item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.quantity.toString().includes(searchTerm) ||
-        item.price.toString().includes(searchTerm)
-      );
-    }
-    switch (searchBy) {
-      case "Name":
-        return item.productName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      case "Quantity":
-        return item.quantity.toString().includes(searchTerm);
-      case "Price":
-        return item.price.toString().includes(searchTerm);
-      default:
-        return true;
-    }
-  });
-
-  // console.log("filtered", filteredInventory);
-
   const getAllData = async () => {
     try {
       const response = await fetch("/api/product", {
@@ -127,11 +104,71 @@ export default function Home() {
 
       const data = await response.json();
       console.log("Fetched data:", data.products);
-      setInventory(data.products); // Set the state with the fetched products
+      setInventory(data.products);
     } catch (error) {
       console.log(`Error fetching data: ${error.message}`);
     }
   };
+
+  // Handle update button click to enable editing
+  const handleUpdateClick = (index, item) => {
+    setEditingIndex(index);
+    setEditedQuantity(item.quantity.toString());
+    setEditedPrice(item.price.toString());
+  };
+
+  // Handle save button click to update the product
+  const handleSaveClick = async (id) => {
+    try {
+      const response = await fetch(`/api/product?id=${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          quantity: parseInt(editedQuantity),
+          price: parseFloat(editedPrice),
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`Success: ${data.message}`);
+        // Update the local inventory state
+        const updatedInventory = [...inventory];
+        updatedInventory[editingIndex] = {
+          ...updatedInventory[editingIndex],
+          quantity: parseInt(editedQuantity),
+          price: parseFloat(editedPrice),
+        };
+        setInventory(updatedInventory);
+        setEditingIndex(null); // Exit edit mode
+      } else {
+        console.log(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.log(`Error: ${error.message}`);
+    }
+  };
+
+  // Filter inventory based on search term and selected criteria
+  const filteredInventory = inventory.filter((item) => {
+    const term = searchTerm.toLowerCase();
+    if (searchBy === "All") {
+      return (
+        item.productName.toLowerCase().includes(term) ||
+        item.quantity.toString().includes(term) ||
+        item.price.toString().includes(term)
+      );
+    } else if (searchBy === "Name") {
+      return item.productName.toLowerCase().includes(term);
+    } else if (searchBy === "Quantity") {
+      return item.quantity.toString().includes(term);
+    } else if (searchBy === "Price") {
+      return item.price.toString().includes(term);
+    }
+    return false;
+  });
 
   return (
     <>
@@ -211,12 +248,49 @@ export default function Home() {
                   className="border-b border-gray-200 hover:bg-gray-100 transition duration-200"
                 >
                   <td className="p-3">{item.productName}</td>
-                  <td className="p-3">{item.quantity}</td>
-                  <td className="p-3">${item.price.toFixed(2)}</td>
                   <td className="p-3">
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={editedQuantity}
+                        onChange={(e) => setEditedQuantity(e.target.value)}
+                        className="p-1 border border-gray-300 rounded w-20"
+                      />
+                    ) : (
+                      item.quantity
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={editedPrice}
+                        onChange={(e) => setEditedPrice(e.target.value)}
+                        className="p-1 border border-gray-300 rounded w-20"
+                      />
+                    ) : (
+                      item.price
+                    )}
+                  </td>
+                  <td className="p-3 flex space-x-2">
+                    {editingIndex === index ? (
+                      <button
+                        onClick={() => handleSaveClick(item._id)}
+                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded"
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpdateClick(index, item)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-2 rounded"
+                      >
+                        Update
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleDeleteClick(index,item._id)}
-                      className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition duration-200"
+                      onClick={() => handleDeleteClick(index, item._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded"
                     >
                       Delete
                     </button>
@@ -226,7 +300,7 @@ export default function Home() {
             </tbody>
           </table>
         ) : (
-          <p className="text-center text-gray-500">No products found.</p>
+          <p className="text-center py-4">No items found.</p>
         )}
       </div>
     </>
