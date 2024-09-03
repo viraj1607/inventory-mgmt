@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 
+
 const uri = "mongodb+srv://meraiviraj:yFZcWTJrHJbXtFKR@cluster0.kdwxb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"; // Ensure your MongoDB URI is set in environment variables
 let client;
 let clientPromise;

@@ -1,5 +1,6 @@
 // API handlers
 import { connectToDatabase } from "../mongo/route";
+import { ObjectId } from "mongodb";
 
 // GET request handler
 export async function GET() {
@@ -54,6 +55,50 @@ export async function POST(request) {
     console.error("Error handling POST request:", error);
     return new Response(
       JSON.stringify({ message: "Error processing request" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+
+export async function DELETE(request) {
+  try {
+    // Parse the incoming request URL to extract the product ID
+    const url = new URL(request.url);
+    const productId = url.searchParams.get("id"); // Extract product ID from query parameters
+
+    // Validate that the ID was provided
+    if (!productId) {
+      return new Response(
+        JSON.stringify({ message: "Product ID is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Connect to MongoDB
+    const { db } = await connectToDatabase();
+    const collection = db.collection("products");
+
+    // Delete the product with the specified ID
+    const result = await collection.deleteOne({ _id: new ObjectId(productId) });
+
+    // Check if a product was deleted
+    if (result.deletedCount === 0) {
+      return new Response(
+        JSON.stringify({ message: "Product not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Send a success response
+    return new Response(
+      JSON.stringify({ message: "Product deleted successfully" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error handling DELETE request:", error);
+    return new Response(
+      JSON.stringify({ message: "Error processing delete request" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

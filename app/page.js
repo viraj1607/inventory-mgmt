@@ -26,30 +26,57 @@ export default function Home() {
     setPrice(e.target.value);
   };
 
-  const handleAddClick = () => {
-    if (
-      productName.trim() &&
-      quantity.trim() &&
-      price.trim() &&
-      !isNaN(quantity) &&
-      !isNaN(price)
-    ) {
-      setInventory([
-        ...inventory,
-        { name: productName, quantity: Number(quantity), price: Number(price) },
-      ]);
-      setProductName("");
-      setQuantity("");
-      setPrice("");
-    } else {
-      alert("Please enter valid product details.");
+  const handleAddClick = async () => {
+    try {
+      const response = await fetch("/api/product", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productName,
+          quantity: parseInt(quantity),
+          price: parseFloat(price),
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`Success: ${data.message}`);
+        getAllData();
+      } else {
+        console.log(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.log(`Error: ${error.message}`);
     }
   };
 
-  const handleDeleteClick = (index) => {
-    const updatedInventory = [...inventory];
-    updatedInventory.splice(index, 1);
-    setInventory(updatedInventory);
+  // Frontend: Updated delete handler to call the DELETE API
+  const handleDeleteClick = async (index, id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
+    }
+
+    try {
+      // Send a DELETE request to the server with the product ID
+      const response = await fetch(`/api/product?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        console.log("Product deleted successfully");
+        // Update the state by removing the deleted product
+        const updatedInventory = [...inventory];
+        updatedInventory.splice(index, 1);
+        setInventory(updatedInventory);
+      } else {
+        const errorData = await response.json();
+        console.error(`Error: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error(`Error deleting product: ${error.message}`);
+    }
   };
 
   const handleSearchTermChange = (e) => {
@@ -61,8 +88,7 @@ export default function Home() {
   };
 
   const filteredInventory = inventory.filter((item) => {
-    if (searchBy === "All" || !searchTerm.trim() && item) {
-
+    if (searchBy === "All" || (!searchTerm.trim() && item)) {
       // console.log(item)
       return (
         item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +98,9 @@ export default function Home() {
     }
     switch (searchBy) {
       case "Name":
-        return item.productName.toLowerCase().includes(searchTerm.toLowerCase());
+        return item.productName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
       case "Quantity":
         return item.quantity.toString().includes(searchTerm);
       case "Price":
@@ -102,33 +130,6 @@ export default function Home() {
       setInventory(data.products); // Set the state with the fetched products
     } catch (error) {
       console.log(`Error fetching data: ${error.message}`);
-    }
-  };
-
-  // Function to send data to MongoDB
-  const handleSendToMongoDB = async () => {
-    try {
-      const response = await fetch("/api/product", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productName,
-          quantity: parseInt(quantity),
-          price: parseFloat(price),
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        console.log(`Success: ${data.message}`);
-        getAllData();
-      } else {
-        console.log(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      console.log(`Error: ${error.message}`);
     }
   };
 
@@ -171,16 +172,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Button to send inventory to MongoDB */}
-        <div className="flex justify-center mt-4">
-          <button
-            onClick={handleSendToMongoDB}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded transition duration-200"
-          >
-            Send to MongoDB
-          </button>
-        </div>
-
         {/* Search and Filter Section */}
         <div className="flex flex-col sm:flex-row items-center mb-6 mt-4 space-y-4 sm:space-y-0 sm:space-x-4">
           <input
@@ -216,7 +207,7 @@ export default function Home() {
             <tbody>
               {filteredInventory.map((item, index) => (
                 <tr
-                  key={index}
+                  key={item._id}
                   className="border-b border-gray-200 hover:bg-gray-100 transition duration-200"
                 >
                   <td className="p-3">{item.productName}</td>
@@ -224,7 +215,7 @@ export default function Home() {
                   <td className="p-3">${item.price.toFixed(2)}</td>
                   <td className="p-3">
                     <button
-                      onClick={() => handleDeleteClick(index)}
+                      onClick={() => handleDeleteClick(index,item._id)}
                       className="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition duration-200"
                     >
                       Delete
