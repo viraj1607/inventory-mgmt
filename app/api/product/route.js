@@ -103,3 +103,50 @@ export async function DELETE(request) {
     );
   }
 }
+
+export async function PUT(request) {
+  try {
+    // Parse the incoming JSON data from the request body
+    const {quantity, price } = await request.json();
+    const url = new URL(request.url);
+    const productId = url.searchParams.get("id"); // Extract product ID from query parameters
+
+    // Validate data
+    if (!productId || quantity == null || price == null) {
+      return new Response(
+        JSON.stringify({ message: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Connect to MongoDB
+    const { db, client } = await connectToDatabase();
+    const collection = db.collection("products");
+
+    // Update the quantity and price without changing the product name
+    const result = await collection.updateOne(
+      { _id: new ObjectId(productId) }, // Find by product ID
+      { $set: { quantity: parseInt(quantity), price: parseFloat(price) } } // Update fields
+    );
+
+
+    // Check if the update was successful
+    if (result.matchedCount === 0) {
+      return new Response(
+        JSON.stringify({ message: "Product not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ message: "Product updated successfully" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error handling PUT request:", error);
+    return new Response(
+      JSON.stringify({ message: "Error processing request" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}

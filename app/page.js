@@ -59,7 +59,7 @@ export default function Home() {
     }
   };
 
-  const handleDeleteClick = async (index, id) => {
+  const handleDeleteClick = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
@@ -133,16 +133,8 @@ export default function Home() {
 
       const data = await response.json();
       if (response.ok) {
-        console.log(`Success: ${data.message}`);
-        // Update the local inventory state
-        const updatedInventory = [...inventory];
-        updatedInventory[editingIndex] = {
-          ...updatedInventory[editingIndex],
-          quantity: parseInt(editedQuantity),
-          price: parseFloat(editedPrice),
-        };
-        setInventory(updatedInventory);
-        setEditingIndex(null); // Exit edit mode
+        getAllData()
+        setEditingIndex(null)
       } else {
         console.log(`Error: ${data.message}`);
       }
