@@ -46,11 +46,10 @@ export default function Home() {
       const data = await response.json();
       if (response.ok) {
         console.log(`Success: ${data.message}`);
-        setProductName("")
-        setPrice("")
-        setQuantity("")
+        setProductName("");
+        setPrice("");
+        setQuantity("");
         getAllData();
-
       } else {
         console.log(`Error: ${data.message}`);
       }
@@ -70,8 +69,8 @@ export default function Home() {
       });
 
       if (response.ok) {
-        console.log("Product deleted successfully",await response.json());
-        getAllData()
+        console.log("Product deleted successfully", await response.json());
+        getAllData();
       } else {
         const errorData = await response.json();
         console.error(`Error: ${errorData.message}`);
@@ -133,8 +132,8 @@ export default function Home() {
 
       const data = await response.json();
       if (response.ok) {
-        getAllData()
-        setEditingIndex(null)
+        getAllData();
+        setEditingIndex(null);
       } else {
         console.log(`Error: ${data.message}`);
       }
@@ -224,7 +223,7 @@ export default function Home() {
 
         {/* Display Inventory in a Table */}
         {filteredInventory.length > 0 ? (
-          <table className="w-full bg-white rounded shadow-md text-left overflow-hidden">
+          <table className="w-full bg-white rounded shadow-md text-left overflow-x-auto">
             <thead className="bg-blue-500 text-white">
               <tr>
                 <th className="p-3">Product Name</th>
@@ -261,10 +260,10 @@ export default function Home() {
                         className="p-1 border border-gray-300 rounded w-20"
                       />
                     ) : (
-                      "$ "+item.price
+                      "$ " + item.price
                     )}
                   </td>
-                  <td className="p-3 flex space-x-2">
+                  <td className="p-3 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     {editingIndex === index ? (
                       <button
                         onClick={() => handleSaveClick(item._id)}
