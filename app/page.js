@@ -281,7 +281,7 @@ export default function Home() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDeleteClick(index, item._id)}
+                      onClick={() => handleDeleteClick(item._id)}
                       className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded"
                     >
                       Delete
