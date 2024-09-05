@@ -261,7 +261,7 @@ export default function Home() {
                         className="p-1 border border-gray-300 rounded w-20"
                       />
                     ) : (
-                      item.price
+                      "$ "+item.price
                     )}
                   </td>
                   <td className="p-3 flex space-x-2">
